@@ -1,104 +1,154 @@
-async function fetchWikipediaImage(birdName) {
-    // Format the title for Wikipedia API (capitalize first letter, use underscores)
-    const formattedTitle = birdName
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join('_');
-    
+/**
+ * BIRDS OF COSTA RICA GALLERY
+ * 
+ * This script loads bird data from a JSON file and creates a visual gallery.
+ * It uses Wikipedia's API with origin=* parameter to work around CORS restrictions.
+ */
+
+/**
+ * Fetches a bird image using Wikipedia's API with CORS support
+ * 
+ * @param {string} birdName - Name of the bird to search for
+ * @returns {Object|null} - Image information or null if not found
+ */
+async function fetchBirdImage(birdName) {
     try {
-        // Use prop=pageimages to get the main image with its original size
-        // This is the recommended way to get the main/thumbnail image from a Wikipedia page
-        const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&formatversion=2&piprop=original&titles=${encodeURIComponent(formattedTitle)}&origin=*`;
+        console.log(`Fetching image for ${birdName}`);
         
-        console.log(`Fetching Wikipedia image for ${birdName}`);
-        const response = await fetch(apiUrl);
+        // APPROACH 1: Try pageimages API first (works with CORS when origin=* is added)
+        // This gets the main/primary image from the page
+        const pageImagesUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(birdName)}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
         
-        if (!response.ok) {
-            throw new Error(`Wikipedia API responded with status: ${response.status}`);
-        }
+        const pageImagesResponse = await fetch(pageImagesUrl);
         
-        const data = await response.json();
-        
-        // Check if we have a valid page with an image
-        if (data.query && data.query.pages && data.query.pages.length > 0) {
-            const page = data.query.pages[0];
+        if (pageImagesResponse.ok) {
+            const data = await pageImagesResponse.json();
             
-            if (page.original && page.original.source) {
-                console.log(`Found Wikipedia image for ${birdName}`);
-                return {
-                    url: page.original.source,
-                    link: `https://en.wikipedia.org/wiki/${encodeURIComponent(formattedTitle)}`
-                };
+            // Navigate through the response to find the image
+            if (data.query && data.query.pages) {
+                // Get the first page (there should only be one)
+                const pageId = Object.keys(data.query.pages)[0];
+                const page = data.query.pages[pageId];
+                
+                // Check if the page has a thumbnail
+                if (page.thumbnail && page.thumbnail.source) {
+                    console.log(`Found main image for ${birdName} using pageimages API`);
+                    return {
+                        url: page.thumbnail.source,
+                        link: `https://en.wikipedia.org/wiki/${encodeURIComponent(birdName.replace(/ /g, "_"))}`
+                    };
+                }
             }
         }
         
-        // Fallback approach: try to get any images from the page if the main image isn't found
-        console.log(`No main image found for ${birdName}, trying to get page images`);
-        const imagesUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=images&titles=${encodeURIComponent(formattedTitle)}&prop=imageinfo&iiprop=url&format=json&formatversion=2&origin=*`;
+        // APPROACH 2: If pageimages fails, try the images API to get a list of all images
+        const imagesUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(birdName)}&prop=images&format=json&origin=*`;
         
         const imagesResponse = await fetch(imagesUrl);
-        if (!imagesResponse.ok) {
-            throw new Error(`Wikipedia images API responded with status: ${imagesResponse.status}`);
-        }
         
-        const imagesData = await imagesResponse.json();
-        
-        // Check if we have any images
-        if (imagesData.query && imagesData.query.pages) {
-            // Filter and sort images to find the most relevant one
-            const relevantImages = imagesData.query.pages
-                .filter(img => {
-                    const title = img.title.toLowerCase();
-                    return title.includes('.jpg') || 
-                           title.includes('.jpeg') || 
-                           title.includes('.png') || 
-                           title.includes('.svg');
-                })
-                .filter(img => {
-                    const title = img.title.toLowerCase();
-                    return !title.includes('icon') && 
-                           !title.includes('logo') && 
-                           !title.includes('map') &&
-                           !title.includes('wiki');
-                })
-                .sort((a, b) => {
-                    // Score images based on relevance
-                    const scoreImage = (img) => {
-                        const title = img.title.toLowerCase();
-                        let score = 0;
-                        
-                        // Prefer images with bird name in title
-                        const lowerBirdName = birdName.toLowerCase();
-                        if (title.includes(lowerBirdName)) score += 10;
-                        
-                        // Avoid distribution maps
-                        if (title.includes('distribution')) score -= 5;
-                        if (title.includes('range')) score -= 5;
-                        
-                        return score;
-                    };
-                    
-                    return scoreImage(b) - scoreImage(a);
-                });
+        if (imagesResponse.ok) {
+            const data = await imagesResponse.json();
             
-            if (relevantImages.length > 0 && relevantImages[0].imageinfo && relevantImages[0].imageinfo.length > 0) {
-                console.log(`Found relevant image for ${birdName} from page images`);
-                return {
-                    url: relevantImages[0].imageinfo[0].url,
-                    link: `https://en.wikipedia.org/wiki/${encodeURIComponent(formattedTitle)}`
-                };
+            if (data.query && data.query.pages) {
+                const pageId = Object.keys(data.query.pages)[0];
+                const page = data.query.pages[pageId];
+                
+                // If we have images, filter and find the best one
+                if (page.images && page.images.length > 0) {
+                    console.log(`Found ${page.images.length} images for ${birdName}, filtering for best match`);
+                    
+                    // Filter out non-image files
+                    const filteredImages = page.images.filter(img => {
+                        const title = img.title.toLowerCase();
+                        return (title.includes('.jpg') || 
+                                title.includes('.jpeg') || 
+                                title.includes('.png') || 
+                                title.includes('.svg')) &&
+                                !title.includes('icon') &&
+                                !title.includes('logo') &&
+                                !title.includes('map') &&
+                                !title.includes('range') &&
+                                !title.includes('distribution');
+                    });
+                    
+                    // Sort by relevance - prefer images that include the bird name
+                    const birdNameLower = birdName.toLowerCase();
+                    const sortedImages = filteredImages.sort((a, b) => {
+                        const aHasName = a.title.toLowerCase().includes(birdNameLower);
+                        const bHasName = b.title.toLowerCase().includes(birdNameLower);
+                        
+                        if (aHasName && !bHasName) return -1;
+                        if (!aHasName && bHasName) return 1;
+                        return 0;
+                    });
+                    
+                    // If we have at least one image, get its URL
+                    if (sortedImages.length > 0) {
+                        // Now we need to get the URL of this image - we only have the title at this point
+                        const selectedImage = sortedImages[0];
+                        
+                        // Get the image URL using imageinfo
+                        const imageInfoUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(selectedImage.title)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+                        
+                        const imageInfoResponse = await fetch(imageInfoUrl);
+                        
+                        if (imageInfoResponse.ok) {
+                            const imageData = await imageInfoResponse.json();
+                            
+                            if (imageData.query && imageData.query.pages) {
+                                const imgPageId = Object.keys(imageData.query.pages)[0];
+                                const imgPage = imageData.query.pages[imgPageId];
+                                
+                                if (imgPage.imageinfo && imgPage.imageinfo.length > 0) {
+                                    console.log(`Found image for ${birdName}: ${imgPage.imageinfo[0].url}`);
+                                    
+                                    return {
+                                        url: imgPage.imageinfo[0].url,
+                                        link: `https://en.wikipedia.org/wiki/${encodeURIComponent(birdName.replace(/ /g, "_"))}`
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         
-        console.log(`No suitable images found for ${birdName} on Wikipedia`);
+        console.log(`No suitable image found for ${birdName}`);
         return null;
     } catch (error) {
-        console.error(`Error fetching Wikipedia image for ${birdName}:`, error);
+        console.error(`Error fetching image for ${birdName}:`, error);
         return null;
     }
 }
 
-// Create a bird card element
+/**
+ * Try to fetch an image using scientific name if common name fails
+ * 
+ * @param {string} commonName - Common name of the bird
+ * @param {string} scientificName - Scientific name of the bird
+ * @returns {Object|null} - Image information or null if not found
+ */
+async function fetchBirdImageWithFallback(commonName, scientificName) {
+    // First try the common name
+    let imageInfo = await fetchBirdImage(commonName);
+    
+    // If that doesn't work and we have a scientific name, try that
+    if (!imageInfo && scientificName) {
+        console.log(`No image found for ${commonName}, trying scientific name: ${scientificName}`);
+        imageInfo = await fetchBirdImage(scientificName);
+    }
+    
+    return imageInfo;
+}
+
+/**
+ * Creates a card element for a bird
+ * 
+ * @param {string} commonName - Common name of the bird
+ * @param {Object|null} imageInfo - Information about the bird's image
+ * @returns {HTMLElement} - The card element
+ */
 function createBirdCard(commonName, imageInfo) {
     const birdCard = document.createElement("div");
     birdCard.className = "bird-card";
@@ -106,17 +156,20 @@ function createBirdCard(commonName, imageInfo) {
     // Create image element
     const img = document.createElement("img");
     img.alt = commonName;
+    
+    // Use the image URL or a placeholder
     img.src = imageInfo ? imageInfo.url : `https://placehold.co/300x200?text=${encodeURIComponent(commonName)}`;
     
-    // Add error handling for image load failures
+    // Add error handling for image loading failures
     img.onerror = function() {
+        console.log(`Failed to load image for ${commonName}, using placeholder`);
         this.src = `https://placehold.co/300x200?text=${encodeURIComponent(commonName)}`;
     };
     
     // Create link element
     const link = document.createElement("a");
     link.href = imageInfo ? imageInfo.link : `https://en.wikipedia.org/wiki/${commonName.replace(/ /g, "_")}`;
-    link.target = "_blank";
+    link.target = "_blank"; // Open in new tab
     link.textContent = commonName;
     
     // Assemble the card
@@ -126,11 +179,15 @@ function createBirdCard(commonName, imageInfo) {
     return birdCard;
 }
 
+/**
+ * Loads bird data from JSON and creates the gallery
+ */
 async function loadBirds() {
     const container = document.getElementById("birds-container");
     container.innerHTML = '<div class="loading">Loading bird data...</div>';
 
     try {
+        // Fetch and parse the bird data
         const response = await fetch("birds_of_costa_rica.json");
         if (!response.ok) {
             throw new Error(`Failed to fetch bird data: ${response.status}`);
@@ -147,18 +204,24 @@ async function loadBirds() {
             categoryTitle.innerText = category;
             container.appendChild(categoryTitle);
             
-            // Process birds in small batches to avoid overwhelming the API
-            // This helps prevent rate limiting issues with Wikipedia's API
+            // Process birds in this category
             for (let i = 0; i < birds.length; i++) {
                 try {
                     const bird = birds[i];
-                    const imageInfo = await fetchWikipediaImage(bird.common_name);
+                    
+                    // Fetch the image for this bird
+                    const imageInfo = await fetchBirdImageWithFallback(
+                        bird.common_name, 
+                        bird.scientific_name
+                    );
+                    
+                    // Create a card for this bird
                     const card = createBirdCard(bird.common_name, imageInfo);
                     container.appendChild(card);
                     
-                    // Add a small delay between API calls to be nice to Wikipedia's servers
+                    // Add a small delay between requests to avoid overwhelming Wikipedia
                     if (i < birds.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 200));
+                        await new Promise(resolve => setTimeout(resolve, 500));
                     }
                 } catch (error) {
                     console.error(`Error creating card for ${birds[i].common_name}:`, error);
@@ -173,7 +236,9 @@ async function loadBirds() {
     }
 }
 
-// Setup search/filtering functionality
+/**
+ * Sets up search/filtering functionality
+ */
 function setupFiltering() {
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
@@ -183,17 +248,16 @@ function setupFiltering() {
     
     searchInput.addEventListener('input', function() {
         const filter = this.value.toLowerCase();
-        const cards = document.querySelectorAll('.bird-card');
         const categories = document.querySelectorAll('.category');
         
         // Create a map to track which categories have visible birds
         const categoryVisibility = new Map();
         categories.forEach(cat => categoryVisibility.set(cat, false));
         
-        // Track the last seen category for each card
+        // Track the current category
         let currentCategory = null;
         
-        // Check each element in the DOM
+        // Check each element in the birds container
         Array.from(document.getElementById('birds-container').children).forEach(element => {
             if (element.classList.contains('category')) {
                 currentCategory = element;
@@ -202,7 +266,7 @@ function setupFiltering() {
             } else if (element.classList.contains('bird-card')) {
                 const birdName = element.querySelector('a').textContent.toLowerCase();
                 
-                // Show bird if name matches
+                // Show bird if name matches the filter
                 const isVisible = birdName.includes(filter);
                 element.style.display = isVisible ? '' : 'none';
                 
@@ -220,8 +284,8 @@ function setupFiltering() {
     });
 }
 
-// Initialize the app
+// Initialize the app when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-    loadBirds();
-    setupFiltering();
+    loadBirds(); // Load birds and create gallery
+    setupFiltering(); // Setup search functionality
 });
