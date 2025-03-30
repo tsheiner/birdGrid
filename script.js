@@ -279,19 +279,6 @@ function createBirdCard(commonName, images) {
         // Add an indicator that multiple images are available
         img.style.cursor = 'pointer';
         
-        // Add indicator dot for multiple images
-        const indicator = document.createElement("div");
-        indicator.className = "image-indicator";
-        indicator.style.position = "absolute";
-        indicator.style.top = "10px";
-        indicator.style.right = "10px";
-        indicator.style.width = "12px";
-        indicator.style.height = "12px";
-        indicator.style.borderRadius = "50%";
-        indicator.style.backgroundColor = "rgba(255, 255, 255, 0.7)";
-        indicator.style.border = "2px solid rgba(0, 0, 0, 0.5)";
-        indicator.title = `${images.length} images available - click to view more`;
-        birdCard.appendChild(indicator);
         
         // Store the image collection and current index
         birdCard.dataset.currentImageIndex = "0";
@@ -332,9 +319,7 @@ function createBirdCard(commonName, images) {
     link.href = hasImages ? images[0].link : `https://en.wikipedia.org/wiki/${commonName.replace(/ /g, "_")}`;
     link.target = "_blank"; // Open in new tab
     link.textContent = commonName;
-    
-    // Position for the indicator
-    birdCard.style.position = "relative";
+
     
     // Assemble the card
     birdCard.appendChild(img);
@@ -342,6 +327,29 @@ function createBirdCard(commonName, images) {
     
     return birdCard;
 }
+
+// Remove the indicator dot code from createBirdCard function
+// (Delete the entire block that creates the indicator element)
+
+// Add this function to create instructions
+function addInstructions() {
+    const container = document.getElementById("birds-container");
+    const instructions = document.createElement("div");
+    instructions.className = "instructions";
+    instructions.innerHTML = "<p>Click any bird image to view alternative photos when available.</p>";
+    instructions.style.padding = "10px";
+    instructions.style.marginBottom = "20px";
+    instructions.style.backgroundColor = "#e9f5ff";
+    instructions.style.borderRadius = "4px";
+    instructions.style.gridColumn = "1 / -1";
+    
+    // Insert instructions at the beginning of the container
+    container.insertBefore(instructions, container.firstChild);
+}
+
+// Add call to this function in the loadBirds function after clearing loading message
+// At line ~383, after: container.innerHTML = ''; // Clear loading message
+// Add this: addInstructions();
 
 /**
  * Loads bird data from JSON and creates the gallery
@@ -359,6 +367,7 @@ async function loadBirds() {
         
         const birdsByCategory = await response.json();
         container.innerHTML = ''; // Clear loading message
+        addInstructions();
 
         // Process each category of birds
         for (const [category, birds] of Object.entries(birdsByCategory)) {
