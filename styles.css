@@ -17,15 +17,6 @@ h1 {
     padding: 20px;
 }
 
-.bird-card {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    text-align: center;
-    padding: 10px;
-}
-
 .bird-card img {
     width: 100%;
     height: 200px;
@@ -40,6 +31,15 @@ h1 {
     text-decoration: none;
     color: #0073e6;
     margin-top: 8px;
+}
+
+.bird-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    padding: 10px;
 }
 
 .category {
@@ -82,16 +82,8 @@ h1 {
     color: #666;
 }
 
-.bird-card a {
-    display: block;
-    font-size: 16px;
-    font-weight: bold;
-    text-decoration: none;
-    color: #0073e6;
-    margin-top: 8px;
-}
-
 .scientific-name {
+    display: none;
     font-style: italic;
     color: #666;
     font-size: 14px;
@@ -99,6 +91,7 @@ h1 {
 }
 
 .image-attribution {
+    display: none;
     font-size: 12px;
     color: #888;
     margin-top: 4px;
@@ -109,6 +102,7 @@ h1 {
 }
 
 .image-attribution a {
+    display: none;
     color: #0073e6;
     text-decoration: none;
     font-size: 12px;
@@ -116,18 +110,4 @@ h1 {
 
 .image-attribution a:hover {
     text-decoration: underline;
-}.bird-card a {
-    display: block;
-    font-size: 16px;
-    font-weight: bold;
-    text-decoration: none;
-    color: #0073e6;
-    margin-top: 8px;
-}
-
-.scientific-name {
-    font-style: italic;
-    color: #666;
-    font-size: 14px;
-    margin-top: 4px;
 }
