@@ -336,7 +336,7 @@ function addInstructions() {
     const container = document.getElementById("birds-container");
     const instructions = document.createElement("div");
     instructions.className = "instructions";
-    instructions.innerHTML = "<p>Click any bird image to view alternative photos when available.</p>";
+    instructions.innerHTML = "<p>Click any bird image to view alternative photos when available.</p><p>Click any bird name to view wikipedia article.</p>";
     instructions.style.padding = "10px";
     instructions.style.marginBottom = "20px";
     instructions.style.backgroundColor = "#e9f5ff";
@@ -368,6 +368,18 @@ async function loadBirds() {
         const birdsByCategory = await response.json();
         container.innerHTML = ''; // Clear loading message
         addInstructions();
+
+        // Update page title and description from JSON if available
+        if (data.title) {
+            document.title = data.title;
+            const pageTitle = document.querySelector('h1');
+            if (pageTitle) pageTitle.textContent = data.title;
+        }
+        
+        if (data.description) {
+            const descriptionElement = document.querySelector('p');
+            if (descriptionElement) descriptionElement.textContent = data.description;
+        }
 
         // Process each category of birds
         for (const [category, birds] of Object.entries(birdsByCategory)) {
