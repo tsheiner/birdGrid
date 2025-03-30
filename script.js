@@ -354,6 +354,9 @@ function addInstructions() {
 /**
  * Loads bird data from JSON and creates the gallery
  */
+/**
+ * Loads bird data from JSON and creates the gallery
+ */
 async function loadBirds() {
     const container = document.getElementById("birds-container");
     container.innerHTML = '<div class="loading">Loading bird data...</div>';
@@ -365,10 +368,20 @@ async function loadBirds() {
             throw new Error(`Failed to fetch bird data: ${response.status}`);
         }
         
-        const birdsByCategory = await response.json();
+        const data = await response.json();
         container.innerHTML = ''; // Clear loading message
-        addInstructions();
-
+        
+        // Add instructions for clicking images
+        const instructions = document.createElement("div");
+        instructions.className = "instructions";
+        instructions.innerHTML = "<p>Click any bird image to view alternative photos when available.</p><p>Click any bird name to view wikipedia article.</p>";
+        instructions.style.padding = "10px";
+        instructions.style.marginBottom = "20px";
+        instructions.style.backgroundColor = "#e9f5ff";
+        instructions.style.borderRadius = "4px";
+        instructions.style.gridColumn = "1 / -1";
+        container.appendChild(instructions);
+        
         // Update page title and description from JSON if available
         if (data.title) {
             document.title = data.title;
@@ -381,8 +394,11 @@ async function loadBirds() {
             if (descriptionElement) descriptionElement.textContent = data.description;
         }
 
-        // Process each category of birds
-        for (const [category, birds] of Object.entries(birdsByCategory)) {
+        // Process each category of birds (exclude title and description properties)
+        const categories = Object.entries(data).filter(([key]) => 
+            key !== 'title' && key !== 'description');
+            
+        for (const [category, birds] of categories) {
             // Create category header
             const categoryTitle = document.createElement("div");
             categoryTitle.className = "category";
