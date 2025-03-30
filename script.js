@@ -4,20 +4,22 @@
  * This script loads bird data from a JSON file and creates a visual gallery.
  * It uses Wikimedia Commons API to fetch bird images, prioritizing scientific names
  * which typically have more standardized and higher quality images.
+ * Clicking on an image loads alternative images for that bird if available.
  */
 
 /**
- * Fetches a bird image from Wikimedia Commons using scientific name
+ * Fetches bird images from Wikimedia Commons using scientific name
+ * Returns multiple images when available
  * 
  * @param {string} scientificName - Scientific name of the bird
- * @returns {Object|null} - Image information or null if not found
+ * @returns {Array} - Array of image objects or empty array if none found
  */
-async function fetchBirdImageFromCommons(scientificName) {
+async function fetchBirdImagesFromCommons(scientificName) {
     try {
         console.log(`Searching Commons for ${scientificName}`);
+        const images = [];
         
         // First approach: Try to find images directly in the category for this species
-        // Categories in Commons are organized taxonomically by scientific name
         const categoryUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(scientificName)}&cmtype=file&prop=imageinfo&iiprop=url&format=json&origin=*`;
         
         const categoryResponse = await fetch(categoryUrl);
@@ -39,9 +41,11 @@ async function fetchBirdImageFromCommons(scientificName) {
                             !title.includes('diagram');
                 });
                 
-                if (filteredImages.length > 0) {
-                    // Get image info for the first matching image
-                    const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(filteredImages[0].title)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+                // Get image info for up to 5 matching images
+                const maxImages = Math.min(filteredImages.length, 5);
+                for (let i = 0; i < maxImages; i++) {
+                    const imageTitle = filteredImages[i].title;
+                    const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(imageTitle)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
                     
                     const imageInfoResponse = await fetch(imageInfoUrl);
                     
@@ -53,20 +57,23 @@ async function fetchBirdImageFromCommons(scientificName) {
                             const page = imageData.query.pages[pageId];
                             
                             if (page.imageinfo && page.imageinfo.length > 0) {
-                                console.log(`Found image for ${scientificName} in Commons category`);
-                                return {
+                                console.log(`Found image for ${scientificName} in Commons category: ${imageTitle}`);
+                                images.push({
                                     url: page.imageinfo[0].url,
-                                    link: `https://commons.wikimedia.org/wiki/Category:${encodeURIComponent(scientificName)}`
-                                };
+                                    link: `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(imageTitle.replace('File:', ''))}`
+                                });
                             }
                         }
                     }
                 }
+                
+                if (images.length > 0) {
+                    console.log(`Found ${images.length} images for ${scientificName} in Commons category`);
+                    return images;
+                }
             }
             
             // Second approach: Try a direct search in Commons
-            // This is useful when the category doesn't exist but images might be
-            // available under different categorization
             const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(scientificName)}+incategory:Birds&srnamespace=6&format=json&origin=*`;
             
             const searchResponse = await fetch(searchUrl);
@@ -87,9 +94,11 @@ async function fetchBirdImageFromCommons(scientificName) {
                                 !title.includes('diagram');
                     });
                     
-                    if (filteredResults.length > 0) {
-                        // Get image info for the best search result
-                        const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(filteredResults[0].title)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+                    // Get image info for up to 5 matching images
+                    const maxResults = Math.min(filteredResults.length, 5);
+                    for (let i = 0; i < maxResults; i++) {
+                        const imageTitle = filteredResults[i].title;
+                        const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(imageTitle)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
                         
                         const imageInfoResponse = await fetch(imageInfoUrl);
                         
@@ -101,11 +110,11 @@ async function fetchBirdImageFromCommons(scientificName) {
                                 const page = imageData.query.pages[pageId];
                                 
                                 if (page.imageinfo && page.imageinfo.length > 0) {
-                                    console.log(`Found image for ${scientificName} via direct search`);
-                                    return {
+                                    console.log(`Found image for ${scientificName} via direct search: ${imageTitle}`);
+                                    images.push({
                                         url: page.imageinfo[0].url,
-                                        link: `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(filteredResults[0].title.replace('File:', ''))}`
-                                    };
+                                        link: `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(imageTitle.replace('File:', ''))}`
+                                    });
                                 }
                             }
                         }
@@ -114,24 +123,30 @@ async function fetchBirdImageFromCommons(scientificName) {
             }
         }
         
-        console.log(`No suitable image found for ${scientificName} in Commons`);
-        return null;
+        if (images.length === 0) {
+            console.log(`No suitable images found for ${scientificName} in Commons`);
+        } else {
+            console.log(`Found ${images.length} total images for ${scientificName}`);
+        }
+        
+        return images;
     } catch (error) {
         console.error(`Error searching Commons for ${scientificName}:`, error);
-        return null;
+        return [];
     }
 }
 
 /**
- * Fallback to search Wikipedia API for an image using common name
+ * Fallback to search Wikipedia API for images using common name
  * Only used if Commons search fails
  * 
  * @param {string} commonName - Common name of the bird
- * @returns {Object|null} - Image information or null if not found
+ * @returns {Array} - Array of image objects or empty array if none found
  */
-async function fetchBirdImageFromWikipedia(commonName) {
+async function fetchBirdImagesFromWikipedia(commonName) {
     try {
         console.log(`Falling back to Wikipedia search for ${commonName}`);
+        const images = [];
         
         // Try the Wikipedia REST API first - simpler and more reliable
         const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(commonName.replace(/ /g, "_"))}`;
@@ -143,10 +158,20 @@ async function fetchBirdImageFromWikipedia(commonName) {
             
             if (data.thumbnail && data.thumbnail.source) {
                 console.log(`Found image for ${commonName} using Wikipedia summary API`);
-                return {
+                images.push({
                     url: data.thumbnail.source,
                     link: data.content_urls.desktop.page
-                };
+                });
+                
+                // Optionally try to get higher resolution version
+                if (data.originalimage && data.originalimage.source) {
+                    images.push({
+                        url: data.originalimage.source,
+                        link: data.content_urls.desktop.page
+                    });
+                }
+                
+                return images;
             }
         }
         
@@ -172,55 +197,66 @@ async function fetchBirdImageFromWikipedia(commonName) {
                     
                     if (pageData.thumbnail && pageData.thumbnail.source) {
                         console.log(`Found image for ${commonName} via Wikipedia search`);
-                        return {
+                        images.push({
                             url: pageData.thumbnail.source,
                             link: pageData.content_urls.desktop.page
-                        };
+                        });
+                        
+                        // Add higher resolution if available
+                        if (pageData.originalimage && pageData.originalimage.source) {
+                            images.push({
+                                url: pageData.originalimage.source,
+                                link: pageData.content_urls.desktop.page
+                            });
+                        }
                     }
                 }
             }
         }
         
-        console.log(`No Wikipedia image found for ${commonName}`);
-        return null;
+        if (images.length === 0) {
+            console.log(`No Wikipedia images found for ${commonName}`);
+        }
+        
+        return images;
     } catch (error) {
-        console.error(`Error fetching Wikipedia image for ${commonName}:`, error);
-        return null;
+        console.error(`Error fetching Wikipedia images for ${commonName}:`, error);
+        return [];
     }
 }
 
 /**
- * Try to fetch an image using scientific name first, then common name as fallback
+ * Try to fetch images using scientific name first, then common name as fallback
  * 
  * @param {string} commonName - Common name of the bird
  * @param {string} scientificName - Scientific name of the bird
- * @returns {Object|null} - Image information or null if not found
+ * @returns {Array} - Array of image objects or empty array if none found
  */
-async function fetchBirdImageWithFallback(commonName, scientificName) {
+async function fetchBirdImagesWithFallback(commonName, scientificName) {
     // First try using scientific name with Commons API (most reliable)
-    let imageInfo = null;
+    let images = [];
     
     if (scientificName) {
-        imageInfo = await fetchBirdImageFromCommons(scientificName);
+        images = await fetchBirdImagesFromCommons(scientificName);
     }
     
     // If that doesn't work, try the common name with Wikipedia
-    if (!imageInfo) {
-        console.log(`No Commons image found for ${scientificName}, trying Wikipedia with common name: ${commonName}`);
-        imageInfo = await fetchBirdImageFromWikipedia(commonName);
+    if (images.length === 0) {
+        console.log(`No Commons images found for ${scientificName}, trying Wikipedia with common name: ${commonName}`);
+        images = await fetchBirdImagesFromWikipedia(commonName);
     }
     
-    return imageInfo;
+    return images;
 }
 
 /**
  * Creates a card element for a bird
  * 
  * @param {string} commonName - Common name of the bird
- * @param {Object|null} imageInfo - Information about the bird's image
+ * @param {Array} images - Array of image information objects
  * @returns {HTMLElement} - The card element
  */
-function createBirdCard(commonName, imageInfo) {
+function createBirdCard(commonName, images) {
     const birdCard = document.createElement("div");
     birdCard.className = "bird-card";
     
@@ -228,8 +264,9 @@ function createBirdCard(commonName, imageInfo) {
     const img = document.createElement("img");
     img.alt = commonName;
     
-    // Use the image URL or a placeholder
-    img.src = imageInfo ? imageInfo.url : `https://placehold.co/300x200?text=${encodeURIComponent(commonName)}`;
+    // Use the first image URL or a placeholder
+    const hasImages = images && images.length > 0;
+    img.src = hasImages ? images[0].url : `https://placehold.co/300x200?text=${encodeURIComponent(commonName)}`;
     
     // Add error handling for image loading failures
     img.onerror = function() {
@@ -237,11 +274,67 @@ function createBirdCard(commonName, imageInfo) {
         this.src = `https://placehold.co/300x200?text=${encodeURIComponent(commonName)}`;
     };
     
+    // Add click handler to cycle through images if multiple are available
+    if (hasImages && images.length > 1) {
+        // Add an indicator that multiple images are available
+        img.style.cursor = 'pointer';
+        
+        // Add indicator dot for multiple images
+        const indicator = document.createElement("div");
+        indicator.className = "image-indicator";
+        indicator.style.position = "absolute";
+        indicator.style.top = "10px";
+        indicator.style.right = "10px";
+        indicator.style.width = "12px";
+        indicator.style.height = "12px";
+        indicator.style.borderRadius = "50%";
+        indicator.style.backgroundColor = "rgba(255, 255, 255, 0.7)";
+        indicator.style.border = "2px solid rgba(0, 0, 0, 0.5)";
+        indicator.title = `${images.length} images available - click to view more`;
+        birdCard.appendChild(indicator);
+        
+        // Store the image collection and current index
+        birdCard.dataset.currentImageIndex = "0";
+        birdCard.dataset.imageCount = images.length.toString();
+        
+        // Store the images array directly on the card element
+        birdCard._images = images;
+        
+        // Add click handler to cycle images
+        img.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent navigation
+            
+            const card = this.parentNode;
+            const currentIndex = parseInt(card.dataset.currentImageIndex);
+            const imageCount = parseInt(card.dataset.imageCount);
+            
+            // Calculate next index with wrap-around
+            const nextIndex = (currentIndex + 1) % imageCount;
+            
+            // Update the image source
+            this.src = card._images[nextIndex].url;
+            
+            // Update the link (optional)
+            const link = card.querySelector('a');
+            if (link) {
+                link.href = card._images[nextIndex].link;
+            }
+            
+            // Update the current index
+            card.dataset.currentImageIndex = nextIndex.toString();
+            
+            console.log(`Showing image ${nextIndex + 1}/${imageCount} for ${commonName}`);
+        });
+    }
+    
     // Create link element
     const link = document.createElement("a");
-    link.href = imageInfo ? imageInfo.link : `https://en.wikipedia.org/wiki/${commonName.replace(/ /g, "_")}`;
+    link.href = hasImages ? images[0].link : `https://en.wikipedia.org/wiki/${commonName.replace(/ /g, "_")}`;
     link.target = "_blank"; // Open in new tab
     link.textContent = commonName;
+    
+    // Position for the indicator
+    birdCard.style.position = "relative";
     
     // Assemble the card
     birdCard.appendChild(img);
@@ -280,14 +373,14 @@ async function loadBirds() {
                 try {
                     const bird = birds[i];
                     
-                    // Fetch the image for this bird - try scientific name first
-                    const imageInfo = await fetchBirdImageWithFallback(
+                    // Fetch images for this bird - try scientific name first
+                    const images = await fetchBirdImagesWithFallback(
                         bird.common_name, 
                         bird.scientific_name
                     );
                     
                     // Create a card for this bird
-                    const card = createBirdCard(bird.common_name, imageInfo);
+                    const card = createBirdCard(bird.common_name, images);
                     container.appendChild(card);
                     
                     // Add a small delay between requests to avoid overwhelming APIs
@@ -296,7 +389,7 @@ async function loadBirds() {
                     }
                 } catch (error) {
                     console.error(`Error creating card for ${birds[i].common_name}:`, error);
-                    const card = createBirdCard(birds[i].common_name, null);
+                    const card = createBirdCard(birds[i].common_name, []);
                     container.appendChild(card);
                 }
             }
