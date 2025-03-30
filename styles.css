@@ -10,18 +10,20 @@ h1 {
     margin-bottom: 20px;
 }
 
-.container {
+#birds-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
     padding: 20px;
 }
 
+
 .bird-card img {
     width: 100%;
     height: 200px;
-    object-fit: cover;
-    border-bottom: 2px solid #ddd;
+    object-fit: contain; /* Changed from 'cover' to 'contain' */
+    background-color: #f5f5f5; /* Light background for letterboxing */
+    border-bottom: 1px solid #ddd;
 }
 
 .bird-card a {
@@ -31,6 +33,7 @@ h1 {
     text-decoration: none;
     color: #0073e6;
     margin-top: 8px;
+    padding-bottom: 8px;
 }
 
 .bird-card {
@@ -39,16 +42,15 @@ h1 {
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     text-align: center;
-    padding-bottom: 10px;
 }
 
 .category {
-    grid-column: 1 / -1;  /* Make the category span the full width */
-    background-color: #e9f5ff;   /* Light blue background to visually separate sections */
+    grid-column: 1 / -1;
+    background-color: #e9f5ff;
     padding: 10px;
     margin-top: 20px;
     border-radius: 4px;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
 }
 
@@ -72,133 +74,4 @@ h1 {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 16px;
-}
-
-.bird-card img[src*="placeholder"] {
-    background-color: #f1f1f1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #666;
-}
-
-.scientific-name {
-    font-style: italic;
-    color: #666;
-    font-size: 14px;
-    margin-top: 4px;
-    margin-bottom: 8px;
-    padding: 0 10px;
-}
-
-.image-attribution {
-    font-size: 12px;
-    color: #888;
-    margin-top: 4px;
-    padding: 4px 10px;
-    background-color: #f8f8f8;
-    border-radius: 3px;
-    text-align: left;
-}
-
-.image-attribution a {
-    color: #0073e6;
-    text-decoration: none;
-    font-size: 12px;
-    display: inline;
-    margin: 0;
-}
-
-.image-attribution a:hover {
-    text-decoration: underline;
-}
-
-/* Source indicator styles */
-.source-indicator {
-    font-size: 12px;
-    color: #666;
-    padding: 4px;
-    background-color: #f8f8f8;
-    border-radius: 3px 3px 0 0;
-    margin-bottom: 4px;
-}
-
-.retry-container {
-    display: flex;
-    justify-content: space-evenly;
-    padding: 0 8px 8px 8px;
-}
-
-.retry-button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background-color 0.3s;
-}
-
-.retry-button.wikipedia {
-    background-color: #eaecf0;
-    color: #3366cc;
-}
-
-.retry-button.wikipedia:hover {
-    background-color: #c8ccd1;
-}
-
-.retry-button.unsplash {
-    background-color: #d1e7ff;
-    color: #0062cc;
-}
-
-.retry-button.unsplash:hover {
-    background-color: #a6d3ff;
-}
-
-.retry-button.pixabay {
-    background-color: #d8f0d8;
-    color: #28a745;
-}
-
-.retry-button.pixabay:hover {
-    background-color: #b9e6b9;
-}
-
-/* Source indicator colors */
-.source-indicator[data-source="wikipedia"] {
-    background-color: #eaecf0;
-    color: #3366cc;
-}
-
-.source-indicator[data-source="unsplash"] {
-    background-color: #d1e7ff;
-    color: #0062cc;
-}
-
-.source-indicator[data-source="pixabay"] {
-    background-color: #d8f0d8;
-    color: #28a745;
-}
-
-.source-indicator[data-source="placeholder"] {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-footer {
-    margin-top: 30px;
-    padding: 20px;
-    background-color: #f8f8f8;
-    border-top: 1px solid #ddd;
-    font-size: 14px;
-}
-
-footer p {
-    margin: 5px 0;
-}
-
-/* Make sure scientific names are always visible */
-.scientific-name {
-    display: block;
 }
