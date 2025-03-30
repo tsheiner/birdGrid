@@ -1,0 +1,133 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+    padding: 20px;
+}
+
+.bird-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    padding: 10px;
+}
+
+.bird-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-bottom: 2px solid #ddd;
+}
+
+.bird-card a {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    color: #0073e6;
+    margin-top: 8px;
+}
+
+.category {
+    grid-column: 1 / -1;  /* Make the category span the full width */
+    /*background-color: #e9f5ff;   Light blue background to visually separate sections */
+    padding: 10px;
+    margin-top: 20px;
+    border-radius: 4px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.loading, .error {
+    padding: 20px;
+    text-align: center;
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.error {
+    color: #d9534f;
+}
+
+.search-input {
+    display: block;
+    margin: 0 auto 20px auto;
+    padding: 10px;
+    width: 80%;
+    max-width: 500px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.bird-card img[src*="placeholder"] {
+    background-color: #f1f1f1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #666;
+}
+
+.bird-card a {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    color: #0073e6;
+    margin-top: 8px;
+}
+
+.scientific-name {
+    font-style: italic;
+    color: #666;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.image-attribution {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+    padding: 4px;
+    background-color: #f8f8f8;
+    border-radius: 3px;
+    text-align: left;
+}
+
+.image-attribution a {
+    color: #0073e6;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.image-attribution a:hover {
+    text-decoration: underline;
+}.bird-card a {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    color: #0073e6;
+    margin-top: 8px;
+}
+
+.scientific-name {
+    font-style: italic;
+    color: #666;
+    font-size: 14px;
+    margin-top: 4px;
+}

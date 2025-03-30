@@ -1,0 +1,50 @@
+{
+    "Marine and Coastal Birds": [
+      {"common_name": "Brown Pelican", "scientific_name": "Pelecanus occidentalis"},
+      {"common_name": "Magnificent Frigatebird", "scientific_name": "Fregata magnificens"},
+      {"common_name": "Brown Booby", "scientific_name": "Sula leucogaster"},
+      {"common_name": "White Ibis", "scientific_name": "Eudocimus albus"},
+      {"common_name": "Great Blue Heron", "scientific_name": "Ardea herodias"},
+      {"common_name": "Snowy Egret", "scientific_name": "Egretta thula"},
+      {"common_name": "Little Blue Heron", "scientific_name": "Egretta caerulea"},
+      {"common_name": "Green Heron", "scientific_name": "Butorides virescens"},
+      {"common_name": "Black-crowned Night-Heron", "scientific_name": "Nycticorax nycticorax"},
+      {"common_name": "Whimbrel", "scientific_name": "Numenius phaeopus"},
+      {"common_name": "Semipalmated Plover", "scientific_name": "Charadrius semipalmatus"},
+      {"common_name": "Royal Tern", "scientific_name": "Thalasseus maximus"}
+    ],
+    "Forest Edge and Nearby Trails": [
+      {"common_name": "Scarlet Macaw", "scientific_name": "Ara macao"},
+      {"common_name": "Fiery-billed Aracari", "scientific_name": "Pteroglossus frantzii"},
+      {"common_name": "Keel-billed Toucan", "scientific_name": "Ramphastos sulfuratus"},
+      {"common_name": "Blue-crowned Motmot", "scientific_name": "Momotus coeruliceps"},
+      {"common_name": "Turquoise-browed Motmot", "scientific_name": "Eumomota superciliosa"},
+      {"common_name": "Green Kingfisher", "scientific_name": "Chloroceryle americana"},
+      {"common_name": "Rufous-tailed Hummingbird", "scientific_name": "Amazilia tzacatl"},
+      {"common_name": "Mangrove Hummingbird", "scientific_name": "Amazilia boucardi"},
+      {"common_name": "Cherrie's Tanager", "scientific_name": "Ramphocelus costaricensis"},
+      {"common_name": "Blue-gray Tanager", "scientific_name": "Thraupis episcopus"},
+      {"common_name": "Golden-hooded Tanager", "scientific_name": "Tangara larvata"},
+      {"common_name": "Clay-colored Thrush", "scientific_name": "Turdus grayi"},
+      {"common_name": "Great Kiskadee", "scientific_name": "Pitangus sulphuratus"},
+      {"common_name": "Social Flycatcher", "scientific_name": "Myiozetetes similis"},
+      {"common_name": "Tropical Kingbird", "scientific_name": "Tyrannus melancholicus"},
+      {"common_name": "Red-lored Parrot", "scientific_name": "Amazona autumnalis"},
+      {"common_name": "Orange-chinned Parakeet", "scientific_name": "Brotogeris jugularis"},
+      {"common_name": "Squirrel Cuckoo", "scientific_name": "Piaya cayana"},
+      {"common_name": "White-tipped Dove", "scientific_name": "Leptotila verreauxi"},
+      {"common_name": "Smooth-billed Ani", "scientific_name": "Crotophaga ani"},
+      {"common_name": "Streak-headed Woodcreeper", "scientific_name": "Lepidocolaptes souleyetii"},
+      {"common_name": "Lineated Woodpecker", "scientific_name": "Dryocopus lineatus"},
+      {"common_name": "Common Pauraque", "scientific_name": "Nyctidromus albicollis"}
+    ],
+    "Common Overhead and Widespread": [
+      {"common_name": "Black Vulture", "scientific_name": "Coragyps atratus"},
+      {"common_name": "Turkey Vulture", "scientific_name": "Cathartes aura"},
+      {"common_name": "Roadside Hawk", "scientific_name": "Rupornis magnirostris"},
+      {"common_name": "Yellow-headed Caracara", "scientific_name": "Milvago chimachima"},
+      {"common_name": "White-crowned Parrot", "scientific_name": "Pionus senilis"},
+      {"common_name": "Pale-vented Pigeon", "scientific_name": "Patagioenas cayennensis"},
+      {"common_name": "Mangrove Swallow", "scientific_name": "Tachycineta albilinea"}
+    ]
+  }
