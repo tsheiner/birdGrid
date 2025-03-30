@@ -264,9 +264,8 @@ function createBirdCard(commonName, images) {
     const img = document.createElement("img");
     img.alt = commonName;
     
-    // Use the first image URL or a placeholder
-    const hasImages = images && images.length > 0;
-    img.src = hasImages ? images[0].url : `https://placehold.co/300x200?text=${encodeURIComponent(commonName)}`;
+    // Use a placeholder initially
+    img.src = `https://placehold.co/300x200?text=${encodeURIComponent(commonName)}`;
     
     // Add error handling for image loading failures
     img.onerror = function() {
@@ -274,52 +273,50 @@ function createBirdCard(commonName, images) {
         this.src = `https://placehold.co/300x200?text=${encodeURIComponent(commonName)}`;
     };
     
-    // Add click handler to cycle through images if multiple are available
-    if (hasImages && images.length > 1) {
-        // Add an indicator that multiple images are available
-        img.style.cursor = 'pointer';
+    // If we already have images, use them
+    const hasImages = images && images.length > 0;
+    if (hasImages) {
+        img.src = images[0].url;
         
-        
-        // Store the image collection and current index
-        birdCard.dataset.currentImageIndex = "0";
-        birdCard.dataset.imageCount = images.length.toString();
-        
-        // Store the images array directly on the card element
-        birdCard._images = images;
-        
-        // Add click handler to cycle images
-        img.addEventListener('click', function(event) {
-            event.preventDefault(); // Prevent navigation
+        // Add click handler for multiple images
+        if (images.length > 1) {
+            img.style.cursor = 'pointer';
             
-            const card = this.parentNode;
-            const currentIndex = parseInt(card.dataset.currentImageIndex);
-            const imageCount = parseInt(card.dataset.imageCount);
+            // Store the image collection and current index
+            birdCard.dataset.currentImageIndex = "0";
+            birdCard.dataset.imageCount = images.length.toString();
             
-            // Calculate next index with wrap-around
-            const nextIndex = (currentIndex + 1) % imageCount;
+            // Store the images array directly on the card element
+            birdCard._images = images;
             
-            // Update the image source
-            this.src = card._images[nextIndex].url;
-            
-            // Update the link (optional)
-            const link = card.querySelector('a');
-            if (link) {
-                link.href = card._images[nextIndex].link;
-            }
-            
-            // Update the current index
-            card.dataset.currentImageIndex = nextIndex.toString();
-            
-            console.log(`Showing image ${nextIndex + 1}/${imageCount} for ${commonName}`);
-        });
+            // Add click handler to cycle images
+            img.addEventListener('click', function(event) {
+                event.preventDefault(); // Prevent navigation
+                
+                const card = this.parentNode;
+                const currentIndex = parseInt(card.dataset.currentImageIndex);
+                const imageCount = parseInt(card.dataset.imageCount);
+                
+                // Calculate next index with wrap-around
+                const nextIndex = (currentIndex + 1) % imageCount;
+                
+                // Update the image source
+                this.src = card._images[nextIndex].url;
+                
+                // Update the current index
+                card.dataset.currentImageIndex = nextIndex.toString();
+                
+                console.log(`Showing image ${nextIndex + 1}/${imageCount} for ${commonName}`);
+            });
+        }
     }
     
-    // Create link element
+    // Create link element - always to Wikipedia
     const link = document.createElement("a");
-    link.href = hasImages ? images[0].link : `https://en.wikipedia.org/wiki/${commonName.replace(/ /g, "_")}`;
+    link.href = `https://en.wikipedia.org/wiki/${commonName.replace(/ /g, "_")}`;
     link.target = "_blank"; // Open in new tab
+    link.rel = "noopener noreferrer"; // Added for security best practices
     link.textContent = commonName;
-
     
     // Assemble the card
     birdCard.appendChild(img);
@@ -347,15 +344,8 @@ function addInstructions() {
     container.insertBefore(instructions, container.firstChild);
 }
 
-// Add call to this function in the loadBirds function after clearing loading message
-// At line ~383, after: container.innerHTML = ''; // Clear loading message
-// Add this: addInstructions();
-
 /**
- * Loads bird data from JSON and creates the gallery
- */
-/**
- * Loads bird data from JSON and creates the gallery
+ * Loads bird data from JSON and creates the gallery with lazy loading for images
  */
 async function loadBirds() {
     const container = document.getElementById("birds-container");
@@ -398,6 +388,7 @@ async function loadBirds() {
         const categories = Object.entries(data).filter(([key]) => 
             key !== 'title' && key !== 'description');
             
+        // First pass: Create all cards with placeholders
         for (const [category, birds] of categories) {
             // Create category header
             const categoryTitle = document.createElement("div");
@@ -405,32 +396,63 @@ async function loadBirds() {
             categoryTitle.innerText = category;
             container.appendChild(categoryTitle);
             
-            // Process birds in this category
-            for (let i = 0; i < birds.length; i++) {
-                try {
-                    const bird = birds[i];
-                    
-                    // Fetch images for this bird - try scientific name first
-                    const images = await fetchBirdImagesWithFallback(
-                        bird.common_name, 
-                        bird.scientific_name
-                    );
-                    
-                    // Create a card for this bird
-                    const card = createBirdCard(bird.common_name, images);
-                    container.appendChild(card);
-                    
-                    // Add a small delay between requests to avoid overwhelming APIs
-                    if (i < birds.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    }
-                } catch (error) {
-                    console.error(`Error creating card for ${birds[i].common_name}:`, error);
-                    const card = createBirdCard(birds[i].common_name, []);
-                    container.appendChild(card);
-                }
+            // Create placeholder cards for all birds
+            for (const bird of birds) {
+                // Create a card with placeholder image
+                const card = createBirdCard(bird.common_name, []);
+                card.dataset.commonName = bird.common_name;
+                card.dataset.scientificName = bird.scientific_name || '';
+                container.appendChild(card);
             }
         }
+        
+        // Second pass: Load images asynchronously
+        setTimeout(async () => {
+            const cards = document.querySelectorAll('.bird-card');
+            for (const card of cards) {
+                try {
+                    const commonName = card.dataset.commonName;
+                    const scientificName = card.dataset.scientificName;
+                    
+                    // Fetch images
+                    const images = await fetchBirdImagesWithFallback(commonName, scientificName);
+                    
+                    if (images && images.length > 0) {
+                        // Update the image
+                        const img = card.querySelector('img');
+                        if (img) {
+                            img.src = images[0].url;
+                            
+                            // Set up click handler for multiple images
+                            if (images.length > 1) {
+                                img.style.cursor = 'pointer';
+                                card.dataset.currentImageIndex = "0";
+                                card.dataset.imageCount = images.length.toString();
+                                card._images = images;
+                                
+                                // Add click handler to cycle images
+                                img.addEventListener('click', function(event) {
+                                    event.preventDefault();
+                                    const card = this.parentNode;
+                                    const currentIndex = parseInt(card.dataset.currentImageIndex);
+                                    const imageCount = parseInt(card.dataset.imageCount);
+                                    const nextIndex = (currentIndex + 1) % imageCount;
+                                    this.src = card._images[nextIndex].url;
+                                    card.dataset.currentImageIndex = nextIndex.toString();
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Small delay to prevent overwhelming APIs
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                } catch (error) {
+                    console.error(`Error loading images for ${card.dataset.commonName}:`, error);
+                }
+            }
+        }, 100); // Start loading images shortly after the grid is rendered
+        
     } catch (error) {
         console.error("Error loading birds:", error);
         container.innerHTML = `<p class="error">Failed to load bird data. Please try again later.</p>`;
